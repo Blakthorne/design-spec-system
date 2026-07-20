@@ -1,0 +1,2 @@
+## Layout
+Use a grid.
