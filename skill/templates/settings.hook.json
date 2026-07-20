@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "case \"$CLAUDE_TOOL_FILE_PATH\" in *design/*) (cd \"$(echo \"$CLAUDE_TOOL_FILE_PATH\" | sed 's#/design/.*#/design#')\" && node render.mjs) ;; esac"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "tokens": "design/tokens.json",
+  "include": ["src", "app", "styles"],
+  "extensions": [".css", ".scss", ".ts", ".tsx", ".js", ".jsx", ".vue", ".svelte"]
+}
