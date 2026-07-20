@@ -2,11 +2,34 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
-import { writeFileSync, rmSync, readFileSync } from 'node:fs';
+import { writeFileSync, rmSync, readFileSync, mkdtempSync } from 'node:fs';
 import { join } from 'node:path';
-import { buildStyleguide, main } from '../skill/templates/render.mjs';
+import { tmpdir } from 'node:os';
+import { buildStyleguide, main, resolveDesignDir } from '../skill/templates/render.mjs';
 
 const designDir = fileURLToPath(new URL('./fixtures/design', import.meta.url));
+
+test('resolveDesignDir returns cwd when it is the design dir', () => {
+  assert.equal(resolveDesignDir('/proj/design'), '/proj/design');
+});
+
+test('resolveDesignDir appends design/ otherwise, not misfiring on webdesign', () => {
+  assert.equal(resolveDesignDir('/proj/webdesign'), '/proj/webdesign/design');
+  assert.equal(resolveDesignDir('/proj'), '/proj/design');
+});
+
+test('main returns 1 with a friendly message when tokens are missing', async () => {
+  const origCwd = process.cwd();
+  const empty = mkdtempSync(join(tmpdir(), 'dss-empty-'));
+  process.chdir(empty);
+  try {
+    const code = await main([]);
+    assert.equal(code, 1);
+  } finally {
+    process.chdir(origCwd);
+    rmSync(empty, { recursive: true, force: true });
+  }
+});
 
 test('buildStyleguide produces HTML containing the component example', async () => {
   const { html } = await buildStyleguide(designDir);

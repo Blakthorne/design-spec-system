@@ -1,7 +1,10 @@
 // skill/templates/lib/parse-spec.mjs
 import { parseFrontmatter } from './frontmatter.mjs';
 
-const RENDER_BLOCK = /```html render\n([\s\S]*?)```/g;
+// Matches a fenced ```html render block. Tolerates trailing whitespace/info
+// after `render`, and requires the closing fence at the start of a line so an
+// inline ``` inside the example does not truncate it early.
+const RENDER_BLOCK = /```html render[^\n]*\r?\n([\s\S]*?)\r?\n```[ \t]*(?:\r?\n|$)/g;
 
 export function parseSpecFile(text) {
   const { data, body } = parseFrontmatter(text);

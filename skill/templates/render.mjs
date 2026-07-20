@@ -1,6 +1,7 @@
 // skill/templates/render.mjs
 import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs';
 import { join, basename } from 'node:path';
+import { cwd } from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { toCssVars, tokenList } from './lib/tokens.mjs';
 import { parseSpecFile } from './lib/parse-spec.mjs';
@@ -15,8 +16,22 @@ function readDirMd(dir) {
     .map((f) => ({ name: basename(f, '.md'), text: readFileSync(join(dir, f), 'utf8') }));
 }
 
+// Resolve the design directory: the current dir if it IS the design dir
+// (basename === 'design'), otherwise a `design/` subdirectory. Using an exact
+// basename match avoids misfiring on projects like `webdesign/` or `redesign/`.
+export function resolveDesignDir(startDir = cwd()) {
+  return basename(startDir) === 'design' ? startDir : join(startDir, 'design');
+}
+
 export function readSources(designDir) {
-  const tokensText = readFileSync(join(designDir, 'tokens.json'), 'utf8');
+  const tokensPath = join(designDir, 'tokens.json');
+  if (!existsSync(tokensPath)) {
+    throw new Error(
+      `Design tokens not found at ${tokensPath}. Run this from your project root (with a design/ directory) `
+      + 'or scaffold the design spec first.',
+    );
+  }
+  const tokensText = readFileSync(tokensPath, 'utf8');
   const principlesText = existsSync(join(designDir, 'principles.md'))
     ? readFileSync(join(designDir, 'principles.md'), 'utf8') : '';
   const governanceText = existsSync(join(designDir, 'governance.md'))
@@ -62,9 +77,17 @@ export function buildStyleguide(designDir) {
 const HASH_RE = /Source hash: <code>([0-9a-f]{12})<\/code>/;
 
 export async function main(argv) {
-  const designDir = process.cwd().endsWith('design') ? process.cwd() : join(process.cwd(), 'design');
+  const designDir = resolveDesignDir();
   const outPath = join(designDir, 'styleguide.html');
-  const { html, hash } = await buildStyleguide(designDir);
+
+  let html;
+  let hash;
+  try {
+    ({ html, hash } = await buildStyleguide(designDir));
+  } catch (err) {
+    console.error(`Error building style guide: ${err.message}`);
+    return 1;
+  }
 
   if (argv.includes('--check')) {
     if (!existsSync(outPath)) {
@@ -88,5 +111,10 @@ export async function main(argv) {
 
 // Run as CLI only when invoked directly.
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  main(process.argv.slice(2)).then((code) => process.exit(code));
+  main(process.argv.slice(2))
+    .then((code) => process.exit(code))
+    .catch((err) => {
+      console.error(`Unexpected error: ${err.message}`);
+      process.exit(1);
+    });
 }

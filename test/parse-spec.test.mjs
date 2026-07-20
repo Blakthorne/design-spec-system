@@ -40,3 +40,17 @@ test('prose has render blocks removed but keeps other prose', () => {
   assert.match(prose, /More prose\./);
   assert.doesNotMatch(prose, /btn-primary/);
 });
+
+test('tolerates trailing whitespace after the render info string', () => {
+  const text = '```html render \n<b>hi</b>\n```\n';
+  const { examples } = parseSpecFile(text);
+  assert.equal(examples.length, 1);
+  assert.match(examples[0], /<b>hi<\/b>/);
+});
+
+test('does not truncate an example that contains an inline triple-backtick', () => {
+  const text = '```html render\n<p>use ```code``` inline</p>\n```\n';
+  const { examples } = parseSpecFile(text);
+  assert.equal(examples.length, 1);
+  assert.match(examples[0], /use ```code``` inline/);
+});

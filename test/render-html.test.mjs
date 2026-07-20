@@ -45,3 +45,24 @@ test('shows a swatch for each token and marks primitives', () => {
   assert.match(html, /--color-red-6/);
   assert.match(html, /not for direct use/i); // primitive marking
 });
+
+test('escapes HTML in token values and frontmatter fields (no injection)', () => {
+  const evil = {
+    ...input,
+    tokens: [{ cssVar: '--x', value: 'red"><script>alert(1)</script>', tier: 'semantic', type: 'color' }],
+    components: [
+      { name: 'Evil', data: { variants: ['<img src=x onerror=alert(1)>'], states: [] },
+        prose: '', examples: [] },
+    ],
+  };
+  const html = renderStyleguide(evil);
+  assert.doesNotMatch(html, /<script>alert\(1\)<\/script>/);
+  assert.doesNotMatch(html, /<img src=x onerror=alert\(1\)>/);
+  assert.match(html, /&lt;script&gt;/);
+  assert.match(html, /&lt;img src=x onerror/);
+});
+
+test('still emits live html render examples verbatim (not escaped)', () => {
+  const html = renderStyleguide(input);
+  assert.match(html, /<button class="btn btn-primary">Save<\/button>/);
+});

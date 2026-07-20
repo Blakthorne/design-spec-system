@@ -1,19 +1,32 @@
 // skill/templates/lib/render-html.mjs
 
+// Escape text/attribute content. Token values and frontmatter fields are
+// human-authored and interpolated into the page, so a stray <, &, or " must
+// not corrupt the document or inject markup. Live `html render` examples are
+// intentionally emitted verbatim — that is the whole point of the gallery.
+function esc(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 function swatch(t) {
   const isColor = t.type === 'color';
+  const value = esc(t.value);
   const chip = isColor
-    ? `<span class="chip" style="background:${t.value}"></span>`
-    : `<span class="chip chip--text">${t.value}</span>`;
+    ? `<span class="chip" style="background:${value}"></span>`
+    : `<span class="chip chip--text">${value}</span>`;
   const flag = t.tier === 'primitive'
     ? ' <em class="warn">(primitive — not for direct use)</em>'
     : '';
-  return `<div class="token">${chip}<code>${t.cssVar}</code> <span>${t.value}</span>${flag}</div>`;
+  return `<div class="token">${chip}<code>${esc(t.cssVar)}</code> <span>${value}</span>${flag}</div>`;
 }
 
 function componentSection(c) {
-  const variants = (c.data.variants || []).join(', ') || '—';
-  const states = (c.data.states || []).join(', ') || '—';
+  const variants = (c.data.variants || []).map(esc).join(', ') || '—';
+  const states = (c.data.states || []).map(esc).join(', ') || '—';
   const examples = c.examples.map((ex) => `<div class="example">${ex}</div>`).join('\n');
   return `
 <section class="component">
