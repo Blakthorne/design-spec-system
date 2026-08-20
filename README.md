@@ -23,3 +23,6 @@ In a new project, invoke the `design-spec` skill and follow its phases. It scaff
 ```bash
 node --test   # zero-dependency unit tests
 ```
+
+## License
+MIT — see [LICENSE](LICENSE).
