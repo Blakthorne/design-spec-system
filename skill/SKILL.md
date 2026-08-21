@@ -21,6 +21,10 @@ solo and presenting finished work for rubber-stamping.
 - **Visual choices get rendered options**, not prose descriptions: build a small
   self-contained mockup (fonts embedded, tokens applied, real hover states) and let the
   human pick from what they can see. Same-genre options need large stacked specimens.
+  Mockups are TRANSIENT scaffolding, never deliverables: build them in `design/mockups/`,
+  gitignore that directory (add the entry if it is missing), and DELETE the files as soon
+  as the decision they informed is recorded in the spec. The spec file is the decision
+  record — never cite a mockup as one, and never leave a spec pointing at a mockup path.
 - **Every checkpoint message ends with a "Decisions I made without asking" list** —
   anything opinionated you defaulted — inviting veto while it is still cheap.
 - When the human pushes back, treat their eye as data ahead of any passing check.
