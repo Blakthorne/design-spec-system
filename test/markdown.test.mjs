@@ -55,3 +55,25 @@ test('renders safe links and rejects javascript: urls', () => {
 test('does not apply emphasis inside inline code', () => {
   assert.match(renderMarkdown('use `a*b*c` literally'), /<code>a\*b\*c<\/code>/);
 });
+
+test('renders GFM tables with inline markup in cells', () => {
+  const html = renderMarkdown('| a | b |\n|---|---|\n| `x` | **y** |');
+  assert.match(html, /<table><thead><tr><th>a<\/th><th>b<\/th><\/tr><\/thead>/);
+  assert.match(html, /<td><code>x<\/code><\/td><td><strong>y<\/strong><\/td>/);
+});
+
+test('a lone pipe line without separator stays a paragraph', () => {
+  assert.match(renderMarkdown('| not a table'), /<p>\| not a table<\/p>/);
+});
+
+test('html render fences emit live examples, other fences stay escaped code', () => {
+  const live = renderMarkdown('```html render\n<button class="x">Go</button>\n```');
+  assert.match(live, /<div class="example"><button class="x">Go<\/button><\/div>/);
+  const code = renderMarkdown('```html\n<b>x</b>\n```');
+  assert.match(code, /<pre><code>&lt;b&gt;x&lt;\/b&gt;\n<\/code><\/pre>/);
+});
+
+test('indented continuation lines stay inside their list item', () => {
+  const html = renderMarkdown('- first line\n  continues here\n- second');
+  assert.match(html, /<li>first line continues here<\/li>\s*<li>second<\/li>/);
+});

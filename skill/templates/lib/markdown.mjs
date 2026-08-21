@@ -64,11 +64,19 @@ export function renderMarkdown(md) {
     const line = lines[i];
     if (line.startsWith('```')) {
       flushPara(); flushList();
+      const info = line.slice(3).trim();
       const code = [];
       i++;
       while (i < lines.length && !lines[i].startsWith('```')) { code.push(lines[i]); i++; }
       i++; // skip closing fence
-      out.push(`<pre><code>${escapeHtml(code.join('\n'))}\n</code></pre>`);
+      // ```html render blocks are LIVE examples anywhere in the spec (foundations and
+      // patterns included), same contract as component files. Spec files are trusted
+      // first-party authorship — that is the whole point of the gallery.
+      if (info === 'html render') {
+        out.push(`<div class="example">${code.join('\n')}</div>`);
+      } else {
+        out.push(`<pre><code>${escapeHtml(code.join('\n'))}\n</code></pre>`);
+      }
       continue;
     }
     const h = line.match(/^(#{1,6})\s+(.*)$/);
@@ -79,9 +87,31 @@ export function renderMarkdown(md) {
       i++;
       continue;
     }
+    // GFM tables: a | row line followed by a |---| separator. Cells get the same
+    // inline treatment as any prose; alignment hints in the separator are ignored.
+    if (line.trim().startsWith('|') && i + 1 < lines.length
+        && /^\s*\|?[\s:|-]+\|?\s*$/.test(lines[i + 1]) && lines[i + 1].includes('-')) {
+      flushPara(); flushList();
+      const cells = (l) => l.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((c) => c.trim());
+      const head = cells(line);
+      i += 2;
+      const rows = [];
+      while (i < lines.length && lines[i].trim().startsWith('|')) { rows.push(cells(lines[i])); i++; }
+      const th = head.map((c) => `<th>${inline(c)}</th>`).join('');
+      const trs = rows.map((r) => `<tr>${r.map((c) => `<td>${inline(c)}</td>`).join('')}</tr>`).join('\n');
+      out.push(`<table><thead><tr>${th}</tr></thead><tbody>\n${trs}\n</tbody></table>`);
+      continue;
+    }
     if (line.trim().startsWith('- ')) {
       flushPara();
       list.push(line.trim().slice(2));
+      i++;
+      continue;
+    }
+    // An indented line while a list is open continues the previous item — without this,
+    // a wrapped bullet's second line escapes the list as an orphan paragraph.
+    if (list.length && /^\s{2,}\S/.test(line)) {
+      list[list.length - 1] += ' ' + line.trim();
       i++;
       continue;
     }

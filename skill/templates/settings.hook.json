@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "case \"$CLAUDE_TOOL_FILE_PATH\" in *design/*) (cd \"$(echo \"$CLAUDE_TOOL_FILE_PATH\" | sed 's#/design/.*#/design#')\" && node render.mjs) ;; esac"
+            "command": "python3 -c \"import json,sys,re,subprocess;d=json.load(sys.stdin);p=(d.get('tool_input') or {}).get('file_path','');m=re.match(r'^(.*?/design)/(?!styleguide\\\\.html)', p);m and subprocess.run(['node','render.mjs'],cwd=m.group(1),capture_output=True)\""
           }
         ]
       }

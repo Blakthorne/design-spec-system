@@ -1,0 +1,272 @@
+/* design/interactive/components.css — the REFERENCE IMPLEMENTATION of every component
+   in the spec. Inlined into styleguide.html so the examples are real, working controls;
+   written so export.html can adopt it wholesale. Semantic tokens only — audit.mjs rules.
+   Class prefix kx- (Keswick). Native elements first: details/summary, radio, checkbox,
+   range — JS (components.js) only where HTML alone cannot (slider↔number sync). */
+
+/* ---------- box model: every kx component is border-box ----------
+   The reference CSS may be inlined into pages without a global reset (the styleguide
+   is one); without this the summary row's padding inflates it past size.row-min and
+   every centre calculation lands a few px off. */
+.kx-demo, .kx-demo *, [class*="kx-"], [class*="kx-"] * { box-sizing: border-box; }
+
+/* ---------- focus: one ring everywhere ---------- */
+.kx :focus-visible, [class*="kx-"]:focus-visible {
+  outline: var(--border-width-focus) solid var(--color-border-focus);
+  outline-offset: var(--size-focus-offset);
+}
+
+/* ---------- buttons (option D — crest & cream) ---------- */
+.kx-btn {
+  font-family: var(--font-body); font-size: var(--font-size-body);
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-xs);
+  height: var(--size-control-md); padding: 0 var(--space-md);
+  border-radius: var(--radius-control); cursor: pointer;
+  border: var(--border-width-hairline) solid transparent;
+  background: none; color: var(--color-text-primary);
+  transition: background var(--duration-fast), border-color var(--duration-fast), color var(--duration-fast), transform 50ms;
+}
+.kx-btn:active { transform: translateY(1px); }
+.kx-btn:disabled { cursor: default; pointer-events: none; color: var(--color-text-disabled); border-color: var(--color-border-subtle); background: none; }
+.kx-btn svg { flex: none; }
+
+.kx-btn--primary { background: var(--color-action-primary); color: var(--color-action-primary-text); font-weight: var(--font-weight-semibold); }
+.kx-btn--primary:hover { background: var(--color-action-primary-hover); }
+.kx-btn--lg { height: var(--size-control-lg); font-size: var(--font-size-title); padding: 0 var(--space-lg); }
+.kx-btn--sm { height: var(--size-control-sm); font-size: var(--font-size-small); padding: 0 var(--space-sm); }
+
+/* Secondary: cream fill, crest label. The edge is border.control at rest — the cream
+   fill alone cannot carry SC 1.4.11 against a white card — and moves to crest on hover. */
+.kx-btn--secondary { background: var(--color-action-secondary); color: var(--color-action-secondary-text);
+  border-color: var(--color-border-control); font-weight: var(--font-weight-medium); }
+.kx-btn--secondary:hover { border-color: var(--color-action-secondary-hover); }
+
+.kx-btn--ghost { color: var(--color-text-action); }
+.kx-btn--ghost:hover { background: var(--color-action-hover-wash); }
+
+/* Destructive: outlined in D — cream fill, error ink. */
+.kx-btn--destructive { background: var(--color-action-destructive); color: var(--color-action-destructive-text);
+  border-color: var(--color-action-destructive-text); }
+.kx-btn--destructive:hover { background: var(--color-feedback-error-bg); }
+
+/* ---------- input / select wells ---------- */
+.kx-field { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2xs);
+  font-family: var(--font-body); font-size: var(--font-size-small); color: var(--color-text-secondary); }
+.kx-well, .kx-select {
+  height: var(--size-control-md); padding: 0 var(--space-sm);
+  background: var(--color-surface-sunken); color: var(--color-text-primary);
+  border: var(--border-width-hairline) solid var(--color-border-control);
+  border-radius: var(--radius-control);
+  font-family: var(--font-body); font-size: var(--font-size-body);
+  transition: border-color var(--duration-fast), background var(--duration-fast);
+}
+.kx-well:hover, .kx-select:hover { border-color: var(--color-border-strong); }
+.kx-well:focus, .kx-select:focus { border-color: var(--color-border-focus); background: var(--color-surface-card); outline: none; }
+.kx-well[aria-invalid="true"] { border: var(--border-width-focus) solid var(--color-feedback-error); }
+.kx-well:disabled, .kx-select:disabled { color: var(--color-text-disabled); border-color: var(--color-border-subtle); }
+.kx-selectw { position: relative; display: inline-flex; }
+.kx-selectw .kx-select { appearance: none; -webkit-appearance: none; padding-right: 40px; }
+.kx-selectw .car { position: absolute; right: var(--space-xs); top: 50%; margin-top: -12px;
+  width: 24px; height: 24px; display: grid; place-items: center;
+  color: var(--color-text-subtle); pointer-events: none; }
+.kx-selectw .kx-select:disabled ~ .car { color: var(--color-text-disabled); }
+@supports selector(::picker(select)) {
+  .kx-selectw .kx-select { appearance: base-select; display: inline-flex; align-items: center; }
+  .kx-selectw .kx-select::picker-icon { display: none; }
+  ::picker(select) { appearance: base-select; background: var(--color-surface-card);
+    border: var(--border-width-hairline) solid var(--color-border-subtle);
+    border-radius: var(--radius-control); box-shadow: var(--shadow-overlay);
+    padding: var(--space-2xs); margin-top: var(--space-3xs); }
+  .kx-selectw option { display: flex; align-items: center; align-content: center; gap: var(--space-xs);
+    min-height: var(--size-control-sm); padding: var(--space-2xs) var(--space-sm); line-height: 1.2;
+    border-radius: var(--radius-chip); font-family: var(--font-body);
+    font-size: var(--font-size-body); color: var(--color-text-primary); }
+  .kx-selectw option:hover, .kx-selectw option:focus-visible { background: var(--color-action-hover-wash); }
+  .kx-selectw option:checked { background: var(--color-state-selected-bg); color: var(--color-state-selected-text); }
+  .kx-selectw option::checkmark { color: var(--color-state-selected-text); }
+}
+.kx-well--num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; }
+input.kx-well::-webkit-outer-spin-button, input.kx-well::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input.kx-well[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+.kx-unitwell { display: inline-flex; align-items: center; gap: var(--space-2xs); height: var(--size-control-md);
+  background: var(--color-surface-sunken); border: var(--border-width-hairline) solid var(--color-border-control);
+  border-radius: var(--radius-control); padding: 0 var(--space-sm); }
+.kx-unitwell:focus-within { border-color: var(--color-border-focus); background: var(--color-surface-card); }
+.kx-unitwell input { border: 0; background: none; outline: none; width: 44px; color: var(--color-text-primary);
+  font-family: var(--font-mono); font-size: var(--font-size-body); text-align: right; }
+.kx-unitwell .unit { color: var(--color-text-subtle); font-size: var(--font-size-small); }
+.kx-msg { display: block; margin-top: var(--space-2xs); font-size: var(--font-size-small); color: var(--color-feedback-error); }
+
+/* ---------- checkbox rows ---------- */
+.kx-checkrow { display: flex; align-items: center; gap: var(--space-sm); min-height: var(--size-row-min);
+  padding: 0 var(--space-sm); border-radius: var(--radius-control); cursor: pointer;
+  font-family: var(--font-body); font-size: var(--font-size-row); color: var(--color-text-primary); }
+.kx-checkrow:hover { background: var(--color-action-hover-wash); }
+.kx-checkrow input { appearance: none; -webkit-appearance: none; margin: 0; flex: none;
+  width: 20px; height: 20px; border-radius: var(--radius-chip);
+  border: var(--border-width-hairline) solid var(--color-border-control);
+  background: var(--color-surface-card); display: grid; place-items: center; cursor: pointer;
+  transition: background var(--duration-fast), border-color var(--duration-fast); }
+.kx-checkrow input:checked, .kx-checkrow input:indeterminate { background: var(--color-action-primary); border-color: var(--color-action-primary); }
+.kx-checkrow input:checked::before {
+  content: ""; width: 13px; height: 13px;
+  background: var(--color-action-primary-text);
+  clip-path: polygon(18% 46%, 8% 58%, 40% 86%, 92% 24%, 81% 15%, 39% 65%);
+}
+.kx-checkrow input:indeterminate::before { content: ""; width: 11px; height: 2px; background: var(--color-action-primary-text); }
+.kx-checkrow .hint { color: var(--color-text-subtle); font-size: var(--font-size-small); }
+
+/* ---------- segmented ---------- */
+.kx-seg { display: inline-flex; background: var(--color-surface-sunken); border-radius: var(--radius-control); padding: var(--space-3xs); }
+.kx-seg label { position: relative; display: inline-flex; }
+.kx-seg input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.kx-seg span { padding: var(--space-xs) var(--space-md); border-radius: var(--radius-chip);
+  font-family: var(--font-body); font-size: var(--font-size-body); color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium); /* constant — selection may never change geometry */
+  border: var(--border-width-hairline) solid transparent; transition: background var(--duration-fast), color var(--duration-fast); }
+.kx-seg label:hover input:not(:checked) + span { background: var(--color-action-hover-wash); }
+.kx-seg input:checked + span { background: var(--color-surface-card); color: var(--color-text-primary);
+  box-shadow: var(--shadow-raised); border-color: var(--color-state-selected-border); }
+.kx-seg input:focus-visible + span { outline: var(--border-width-focus) solid var(--color-border-focus); outline-offset: var(--size-focus-offset); }
+
+/* ---------- chips ---------- */
+.kx-chips { display: flex; gap: var(--space-xs); align-items: center; flex-wrap: wrap; }
+.kx-chip { position: relative; display: inline-flex; }
+.kx-chip input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.kx-chip span { height: var(--size-control-sm); display: inline-flex; align-items: center; padding: 0 var(--space-md);
+  border-radius: var(--radius-pill); border: var(--border-width-hairline) solid var(--color-border-control);
+  color: var(--color-text-secondary); font-family: var(--font-body); font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium); /* constant — see .kx-seg */
+  transition: background var(--duration-fast), color var(--duration-fast), border-color var(--duration-fast); }
+.kx-chip:hover input:not(:checked) + span { background: var(--color-action-hover-wash); }
+.kx-chip input:checked + span { background: var(--color-state-selected-bg); border-color: var(--color-state-selected-border);
+  color: var(--color-state-selected-text); }
+.kx-chip input:focus-visible + span { outline: var(--border-width-focus) solid var(--color-border-focus); outline-offset: var(--size-focus-offset); }
+
+/* ---------- slider (+ paired number, synced by components.js) ---------- */
+.kx-sliderrow { display: flex; align-items: center; gap: var(--space-sm); min-height: var(--size-row-min);
+  font-family: var(--font-body); }
+.kx-sliderrow > .lbl { flex: none; color: var(--color-text-secondary); font-size: var(--font-size-row); font-weight: var(--font-weight-medium); }
+.kx-sliderrow input[type="range"] { flex: 1; min-width: 0; accent-color: var(--color-action-primary); height: 20px; }
+.kx-sliderrow output { flex: none; color: var(--color-text-primary); font-family: var(--font-mono); font-size: var(--font-size-small); min-width: 44px; text-align: right; }
+
+/* ---------- summary rows / expanders (native details) ----------
+   Disclosure geometry is ONE system: a 24px caret slot at right --space-xs, row
+   padding-right 40px (+32px more when the revert is present). The caret is centred in
+   its slot, so nothing sits off-balance regardless of glyph. */
+.kx-srw { position: relative; border-left: var(--border-width-marker) solid transparent; }
+.kx-srw.mod { border-left-color: var(--color-state-modified); }
+details.kx-x { }
+details.kx-x > summary { list-style: none; cursor: pointer; }
+details.kx-x > summary::-webkit-details-marker { display: none; }
+.kx-srow { position: relative; display: flex; align-items: center; gap: var(--space-xs);
+  min-height: var(--size-row-min); padding: var(--space-2xs) 40px var(--space-2xs) var(--space-sm);
+  border-radius: var(--radius-control); font-family: var(--font-body); font-size: var(--font-size-row);
+  transition: background var(--duration-fast); }
+.kx-srow:hover { background: var(--color-action-hover-wash); }
+details.kx-x[open] > summary .kx-srow { background: var(--color-surface-subtle); }
+.kx-srow .lbl { flex: none; color: var(--color-text-secondary); font-weight: var(--font-weight-medium); }
+.kx-srow .val { flex: 1; min-width: 0; text-align: right; color: var(--color-text-primary);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kx-srow .car { position: absolute; right: var(--space-xs); top: 50%; margin-top: -12px;
+  width: 24px; height: 24px; display: grid; place-items: center; color: var(--color-text-subtle);
+  transition: transform var(--duration-base); }
+details.kx-x[open] > summary .kx-srow .car { transform: rotate(180deg); }
+.kx-srw.mod .kx-srow { padding-right: 72px; }
+.kx-srw .rst { position: absolute; right: 40px; top: calc(var(--size-row-min) / 2); transform: translateY(-50%);
+  width: 24px; height: 24px;
+  display: none; place-items: center; border: 0; background: none; cursor: pointer;
+  color: var(--color-state-modified); border-radius: var(--radius-chip); padding: 0; }
+.kx-srw.mod .rst { display: grid; }
+.kx-srw .rst:hover { background: var(--color-state-modified-bg); }
+.kx-xbody { padding: var(--space-2xs) var(--space-sm) var(--space-sm) var(--space-md);
+  font-family: var(--font-body); font-size: var(--font-size-small); color: var(--color-text-secondary); }
+
+/* ---------- zone ---------- */
+details.kx-zone > summary { list-style: none; cursor: pointer; }
+details.kx-zone > summary::-webkit-details-marker { display: none; }
+.kx-zhead { display: flex; align-items: center; gap: var(--space-xs); padding-bottom: var(--space-xs); }
+.kx-zhead b { font-family: var(--font-display); font-size: var(--font-size-heading);
+  font-weight: var(--font-weight-semibold); color: var(--color-text-primary); }
+.kx-zhead .rule { flex: 1; height: 1px; background: var(--color-border-subtle); }
+.kx-zhead .car { width: 24px; height: 24px; display: grid; place-items: center;
+  color: var(--color-text-subtle); transition: transform var(--duration-base); }
+details.kx-zone:not([open]) .kx-zhead .car { transform: rotate(-90deg); }
+
+/* ---------- gallery tiles ---------- */
+.kx-gallery { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-xs); }
+.kx-tile { position: relative; display: block; border-radius: var(--radius-control); overflow: hidden;
+  border: var(--border-width-marker) solid var(--color-border-subtle); cursor: pointer;
+  background: var(--color-surface-card); transition: border-color var(--duration-fast); }
+.kx-tile:hover { border-color: var(--color-border-control); }
+.kx-tile input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.kx-tile .thumb { height: 88px; display: grid; place-items: center; background: var(--color-surface-paper); }
+.kx-tile .thumb.pending { background: var(--color-surface-subtle); font-family: var(--font-body);
+  font-size: var(--font-size-caption); color: var(--color-text-subtle); }
+.kx-tile .gnm { display: block; padding: var(--space-xs); font-family: var(--font-body); font-size: var(--font-size-small);
+  color: var(--color-text-secondary); }
+.kx-tile .gnm { font-weight: var(--font-weight-medium); } /* constant — selection never reflows */
+.kx-tile:has(input:checked) { border-color: var(--color-state-selected-border); box-shadow: var(--shadow-raised); }
+.kx-tile:has(input:checked) .gnm { color: var(--color-state-selected-text); }
+.kx-tile:has(input:focus-visible) { outline: var(--border-width-focus) solid var(--color-border-focus); outline-offset: var(--size-focus-offset); }
+
+/* ---------- changes chip ---------- */
+details.kx-chipmod > summary { list-style: none; cursor: pointer; display: inline-flex; }
+details.kx-chipmod > summary::-webkit-details-marker { display: none; }
+.kx-chipmod-pill { height: var(--size-control-sm); display: inline-flex; align-items: center; gap: var(--space-2xs);
+  padding: 0 var(--space-sm); border-radius: var(--radius-pill);
+  background: var(--color-state-modified-bg); color: var(--color-state-modified-text);
+  font-family: var(--font-body); font-size: var(--font-size-small); font-weight: var(--font-weight-medium); }
+.kx-chipmod-pill .dot { width: 6px; height: 6px; border-radius: var(--radius-pill); background: var(--color-state-modified); }
+.kx-chipmod-pill .car { display: grid; place-items: center; transition: transform var(--duration-base); }
+details.kx-chipmod[open] .kx-chipmod-pill .car { transform: rotate(180deg); }
+.kx-changelist { margin-top: var(--space-xs); background: var(--color-surface-card);
+  border: var(--border-width-hairline) solid var(--color-border-subtle);
+  border-radius: var(--radius-control); box-shadow: var(--shadow-panel); padding: var(--space-2xs); }
+.kx-changeitem { display: flex; align-items: center; gap: var(--space-xs); min-height: var(--size-control-md); padding: 0 var(--space-xs); }
+.kx-changeitem .what { flex: 1; font-family: var(--font-body); font-size: var(--font-size-small); color: var(--color-text-primary); }
+.kx-changeitem .what small { color: var(--color-text-subtle); font-size: inherit; }
+.kx-changeitem .x { flex: none; width: 24px; height: 24px; display: grid; place-items: center;
+  border: 0; background: none; cursor: pointer; padding: 0;
+  color: var(--color-state-modified); border-radius: var(--radius-chip); }
+.kx-changeitem .x:hover { background: var(--color-state-modified-bg); }
+
+/* ---------- toast / validation / progress ---------- */
+.kx-toast { display: flex; align-items: center; gap: var(--space-sm);
+  background: var(--color-surface-card); border: var(--border-width-hairline) solid var(--color-border-subtle);
+  border-radius: var(--radius-control); box-shadow: var(--shadow-overlay);
+  padding: var(--space-sm) var(--space-md); font-family: var(--font-body); }
+.kx-toast .ico { flex: none; display: grid; place-items: center; }
+.kx-toast .ico.ok { color: var(--color-feedback-success); }
+.kx-toast .ico.err { color: var(--color-feedback-error); }
+.kx-toast .msg { flex: 1; font-size: var(--font-size-small); color: var(--color-text-primary); }
+.kx-note { display: flex; gap: var(--space-xs); border-radius: var(--radius-control);
+  padding: var(--space-xs) var(--space-sm); font-family: var(--font-body); font-size: var(--font-size-small); }
+.kx-note .ico { flex: none; display: grid; place-items: center; }
+.kx-note--warn { background: var(--color-feedback-warning-bg); color: var(--color-feedback-warning); }
+.kx-note--error { background: var(--color-feedback-error-bg); color: var(--color-feedback-error); }
+.kx-note--info { color: var(--color-text-subtle); padding-left: 0; }
+.kx-phases { font-family: var(--font-body); font-size: var(--font-size-small); }
+.kx-phases > div { display: flex; align-items: center; gap: var(--space-2xs); min-height: 24px; }
+.kx-phases .done { color: var(--color-feedback-success); }
+.kx-phases .active { color: var(--color-text-primary); }
+.kx-phases .pending { color: var(--color-text-subtle); }
+
+/* ---------- popover / dialog cards ---------- */
+.kx-pop { background: var(--color-surface-card); border: var(--border-width-hairline) solid var(--color-border-subtle);
+  border-radius: var(--radius-surface); box-shadow: var(--shadow-overlay); padding: var(--space-md);
+  font-family: var(--font-body); }
+.kx-pop .title { font-family: var(--font-display); font-size: var(--font-size-title);
+  font-weight: var(--font-weight-semibold); color: var(--color-text-primary); margin-bottom: var(--space-2xs); }
+.kx-pop .sub { font-size: var(--font-size-small); color: var(--color-text-secondary); margin-bottom: var(--space-md); }
+.kx-pop .acts { display: flex; gap: var(--space-xs); justify-content: flex-end; }
+
+/* ---------- demo scaffolding (styleguide only) ---------- */
+.kx-demo { font-family: var(--font-body); background: var(--color-surface-page);
+  padding: var(--space-md); border-radius: var(--radius-surface); }
+.kx-demo--stage { background: var(--color-surface-stage); }
+.kx-demo--card { background: var(--color-surface-card); }
+
+@media (prefers-reduced-motion: reduce) {
+  .kx-srow .car, .kx-zhead .car, .kx-chipmod-pill .car, .kx-btn, .kx-chip span, .kx-seg span { transition: none; }
+}

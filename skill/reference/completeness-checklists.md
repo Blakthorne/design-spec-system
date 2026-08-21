@@ -22,3 +22,6 @@ The spec is not "done" until every section below is present and visually approve
 - [ ] Usage ("Use When") and do's / don'ts (the `donts` frontmatter)
 - [ ] Accessibility: focus flow, contrast, keyboard, target size
 - [ ] At least one `html render` example using semantic tokens only
+- [ ] Example is INTERACTIVE (reference CSS classes + native elements), not a static picture
+- [ ] Component's colour pairings added to `design/contrast.mjs` and passing in both themes
+- [ ] Selected/hover/focus states change no geometry (no reflow on state change)
