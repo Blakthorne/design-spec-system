@@ -51,6 +51,17 @@ export function readSources(designDir) {
 
 export function buildStyleguide(designDir) {
   const src = readSources(designDir);
+  // The interactive runtime: the reference implementation the examples run on.
+  const cssPath = join(designDir, 'interactive', 'components.css');
+  const jsPath = join(designDir, 'interactive', 'components.js');
+  const componentCss = existsSync(cssPath) ? readFileSync(cssPath, 'utf8') : '';
+  const componentJs = existsSync(jsPath) ? readFileSync(jsPath, 'utf8') : '';
+  // Optional project identity + self-hosted faces.
+  const guidePath = join(designDir, 'guide.json');
+  const guide = existsSync(guidePath) ? JSON.parse(readFileSync(guidePath, 'utf8')) : {};
+  const fontsPath = join(designDir, 'fonts', 'fonts.css');
+  const fontsCss = existsSync(fontsPath) ? readFileSync(fontsPath, 'utf8') : '';
+  src.parts.push(componentCss, componentJs, fontsCss, JSON.stringify(guide)); // hash covers these too
   const tokensRoot = JSON.parse(src.tokensText);
   const { root: cssRoot, dark: cssDark } = toCssVars(tokensRoot);
   const hash = hashSources(src.parts);
@@ -58,7 +69,7 @@ export function buildStyleguide(designDir) {
   // renderStyleguide is imported lazily to keep this module focused on IO.
   return import('./lib/render-html.mjs').then(({ renderStyleguide }) => {
     const html = renderStyleguide({
-      cssRoot, cssDark,
+      cssRoot, cssDark, componentCss, componentJs, fontsCss, guide,
       tokens: tokenList(tokensRoot),
       principles: renderMarkdown(src.principlesText),
       foundations: src.foundations.map((f) => ({ name: f.name, html: renderMarkdown(f.text) })),
