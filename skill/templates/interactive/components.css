@@ -1,7 +1,7 @@
 /* design/interactive/components.css — the REFERENCE IMPLEMENTATION of every component
    in the spec. Inlined into styleguide.html so the examples are real, working controls;
    written so export.html can adopt it wholesale. Semantic tokens only — audit.mjs rules.
-   Class prefix kx- (Keswick). Native elements first: details/summary, radio, checkbox,
+   Class prefix kx- (the template's namespace). Native elements first: details/summary, radio, checkbox,
    range — JS (components.js) only where HTML alone cannot (slider↔number sync). */
 
 /* ---------- box model: every kx component is border-box ----------
