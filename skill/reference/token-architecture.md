@@ -14,5 +14,15 @@ Put theme variance at the **semantic** layer via `$extensions["design-spec"].dar
 ## Naming
 Order path segments from general to specific: category → role → variant/scale (e.g. `color.action.primary`, `space.md`). CSS var = path joined with dashes (`--color-action-primary`).
 
+## State layers are alpha, not colors
+A hover/pressed/selected **wash** must be `rgba(...)` in every theme. An opaque wash is
+invisible on whichever surface shares its value, and since washes and quiet surfaces are
+both drawn from the low end of the same neutral ramp, that collision is the DEFAULT
+outcome, not an unlucky one — this template shipped with `hover-wash === surface.subtle`
+and `pressed-wash === surface.sunken`, both exact. There is usually no free opaque step
+between the page and its quiet surfaces, so a wash has to be a layer. `contrast.mjs`
+enforces it by cross product (every wash × every surface, floor 1.03:1) plus an ordering
+check that press reads stronger than hover.
+
 ## The AI-drift rule
 Agents tend to grab primitives (`red.6`) instead of semantic tokens (`color.feedback.error`) unless told not to. Two defenses, both enforced: primitives are flagged `tier: primitive`, and `audit.mjs` fails the build on direct primitive use in app code.

@@ -14,7 +14,7 @@ function esc(s) {
 
 // ---- token gallery ----------------------------------------------------------
 // Grouped and visual, the way mature systems document tokens (Carbon/Polaris/Material):
-// colour ramps as strips, semantic colours as swatch cards with their dark value,
+// color ramps as strips, semantic colors as swatch cards with their dark value,
 // type as live specimens, spacing as proportional bars, radius/shadow/border as shapes.
 function tGroup(tokens, top) { return tokens.filter((t) => t.path[0] === top); }
 
@@ -39,8 +39,8 @@ function colorGallery(tokens) {
         <div class="tg-val">${esc(t.value)}${t.dark ? ` <span class="tg-dark">· dark ${esc(t.dark)}</span>` : ''}</div>
       </div>`).join('')}
     </div>`).join('');
-  return `<h3 class="tg-sect">Colour — primitives <em class="warn">(not for direct use)</em></h3>${rampsHtml}
-          <h3 class="tg-sect">Colour — semantic roles</h3>${semHtml}`;
+  return `<h3 class="tg-sect">Color — primitives <em class="warn">(not for direct use)</em></h3>${rampsHtml}
+          <h3 class="tg-sect">Color — semantic roles</h3>${semHtml}`;
 }
 
 function typeGallery(tokens) {
@@ -50,9 +50,9 @@ function typeGallery(tokens) {
   const misc = [...tGroup(tokens, 'line-height'), ...tGroup(tokens, 'letter-spacing')];
   return `<h3 class="tg-sect">Typography</h3>
   ${fams.map((t) => `<div class="tg-spec"><div class="tg-specmeta"><code>${esc(t.cssVar)}</code><span>${esc(t.value)}</span></div>
-     <div class="tg-specline" style="font-family:${esc(t.value)}">Keswick Christian School — campus map · 0123456789</div></div>`).join('')}
+     <div class="tg-specline" style="font-family:${esc(t.value)}">The quick brown fox jumps over the lazy dog · 0123456789</div></div>`).join('')}
   <div class="tg-sizes">${sizes.map((t) => `<div class="tg-sizerow"><code>${esc(t.cssVar)}</code><span class="tg-px">${esc(t.value)}</span>
-     <span class="tg-sizespec" style="font-size:${esc(t.value)}">Grayscale campus map</span></div>`).join('')}</div>
+     <span class="tg-sizespec" style="font-size:${esc(t.value)}">The quick brown fox</span></div>`).join('')}</div>
   <div class="tg-weights">${weights.map((t) => `<div class="tg-w"><span style="font-weight:${esc(t.value)}">Ag</span><code>${esc(t.path[1])} ${esc(t.value)}</code></div>`).join('')}</div>
   ${factTable(misc)}`;
 }
@@ -171,7 +171,7 @@ ${input.componentCss || ''}
 
 /* =========================================================================
    The styleguide's own chrome — built FROM the system it documents: token
-   colours, the two faces, the spacing scale, the zone-heading grammar. The
+   colors, the two faces, the spacing scale, the zone-heading grammar. The
    guide is the first product of the design system.
    ========================================================================= */
 * { box-sizing: border-box; }
@@ -326,7 +326,7 @@ img, table, pre { max-width: 100%; }
   <button class="kx-btn kx-btn--secondary kx-btn--sm" id="sg-theme">Theme: system</button>
 <script>
 (function(){
-  var KEY='keswickTheme', btn=document.getElementById('sg-theme'), root=document.documentElement;
+  var KEY='designSpecTheme', btn=document.getElementById('sg-theme'), root=document.documentElement;
   function apply(v){ if(v==='light'||v==='dark'){root.dataset.theme=v}else{delete root.dataset.theme;v='system'}
     btn.textContent='Theme: '+v; }
   btn.addEventListener('click',function(){
