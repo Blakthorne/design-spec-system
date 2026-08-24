@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { auditCode } from '../skill/templates/audit.mjs';
+import { auditCode, auditCursors } from '../skill/templates/audit.mjs';
 
 const tokensRoot = JSON.parse(
   readFileSync(fileURLToPath(new URL('./fixtures/tokens.json', import.meta.url)), 'utf8'),
@@ -70,4 +70,123 @@ test('flags primitive var() even with internal whitespace', () => {
   const v = auditCode({ tokensRoot, files: [{ path: 'a.css', content: '.x { color: var(  --color-red-6  ); }' }] });
   assert.equal(v.length, 1);
   assert.equal(v[0].kind, 'primitive-token-direct-use');
+});
+
+test('an include entry may name a single FILE, not just a directory', async () => {
+  // export.html joining the audit is the canonical case: the config lists one file
+  // beside the component directory, and the audit must not readdir() it.
+  const { mkdtempSync, writeFileSync: wf, rmSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  const { tmpdir } = await import('node:os');
+  const { main } = await import('../skill/templates/audit.mjs');
+  const tmp = mkdtempSync(join(tmpdir(), 'dss-audit-file-'));
+  const origCwd = process.cwd();
+  process.chdir(tmp);
+  try {
+    wf(join(tmp, 'tokens.json'), JSON.stringify(tokensRoot));
+    wf(join(tmp, 'app.html'), '<style>.x{color:var(--color-action-primary)}</style>');
+    wf(join(tmp, 'audit.json'), JSON.stringify({
+      tokens: 'tokens.json', include: ['app.html'], extensions: ['.html'],
+    }));
+    assert.equal(await main(['audit.json']), 0);
+    wf(join(tmp, 'app.html'), '<style>.x{color:#ff0000}</style>');
+    assert.equal(await main(['audit.json']), 1);
+    // a file whose extension is not audited contributes nothing (and never crashes)
+    wf(join(tmp, 'audit2.json'), JSON.stringify({
+      tokens: 'tokens.json', include: ['app.html'], extensions: ['.css'],
+    }));
+    assert.equal(await main(['audit2.json']), 0);
+  } finally {
+    process.chdir(origCwd);
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test('british-spelling flagged when spelling: american', () => {
+  const v = auditCode({ tokensRoot, files: [{ path: 'a.css', content: '/* the colour of the grey centre */' }], spelling: 'american' });
+  assert.equal(v.length, 1);
+  assert.equal(v[0].kind, 'british-spelling');
+});
+
+test('british-spelling ignored without the config flag', () => {
+  const v = auditCode({ tokensRoot, files: [{ path: 'a.css', content: '/* the colour */' }] });
+  assert.equal(v.length, 0);
+});
+
+test('aria-labelledby is exempt from the spelling check', () => {
+  const v = auditCode({ tokensRoot, files: [{ path: 'a.html', content: '<div aria-labelledby="t"></div>' }], spelling: 'american' });
+  assert.equal(v.length, 0);
+});
+
+// ---- control-cursor-undeclared -------------------------------------------------
+// The lapse this catches: a styled control that never says it is clickable. Invisible
+// in review (nothing is missing, the pointer just never changes), so it needs a lint.
+const cur = (content, path = 'c.css') => auditCursors([{ path, content }]);
+
+test('flags a control family that never declares a cursor', () => {
+  const v = cur('.kx-select { height: 40px; }\n.kx-select:hover { border-color: red; }');
+  assert.equal(v.length, 1);
+  assert.equal(v[0].kind, 'control-cursor-undeclared');
+  assert.match(v[0].snippet, /"select"/);
+});
+
+test('one cursor declaration anywhere in the family satisfies it', () => {
+  // a control is spread over base + variant + state rules; only one must decide
+  assert.deepEqual(cur('.kx-select { cursor: pointer; }\n.kx-select:hover { border-color: red; }'), []);
+  assert.deepEqual(cur('.kx-btn { height: 40px; }\n.kx-btn--ghost { cursor: pointer; }'), []);
+});
+
+test('requires a DECISION, not the pointer value', () => {
+  assert.deepEqual(cur('.kx-slider-thumb { cursor: grab; }'), []);
+  assert.deepEqual(cur('.kx-tile { cursor: default; }'), []);
+});
+
+test('matches by identifier segment, so .kx-table is not the tab family', () => {
+  assert.deepEqual(cur('.kx-table { border: 0; }'), []);
+  assert.deepEqual(cur('.kx-tablist { border: 0; }'), []);   // list container, not a tab
+  assert.equal(cur('.kx-tab { border: 0; }').length, 1);
+});
+
+test('a 5+ character family also matches a segment it prefixes by 2+', () => {
+  assert.equal(cur('.kx-switchrow input { opacity: 0; }').length, 1);   // switch
+  assert.deepEqual(cur('.kx-options { display: flex; }'), []);          // plural container
+  assert.equal(cur('.kx-optionrow { display: flex; }').length, 1);      // an option
+});
+
+test('ignores UA shadow parts — a spin button is not a Button', () => {
+  assert.deepEqual(cur('input.kx-well::-webkit-inner-spin-button { margin: 0; }'), []);
+  assert.deepEqual(cur('input[type="range"]::-moz-range-thumb { border: 0; }\n'
+    + 'input[type="range"] { cursor: pointer; }'), []);
+});
+
+test('text-entry families are never asked for a cursor', () => {
+  assert.deepEqual(cur('.kx-well { height: 40px; }\n.kx-field { display: flex; }'), []);
+});
+
+test('finds rules nested in an at-rule', () => {
+  assert.deepEqual(cur('@supports (color: red) { .kx-chip { cursor: pointer; } }'), []);
+  assert.equal(cur('@media (min-width: 40em) { .kx-chip { padding: 0; } }').length, 1);
+});
+
+test('only stylesheets are scanned', () => {
+  assert.deepEqual(cur('const s = { button: 1 };', 'app.tsx'), []);
+});
+
+test('reports one violation per family, not per rule', () => {
+  const v = cur('.kx-chip { a: 1; }\n.kx-chip span { b: 2; }\n.kx-chip input { c: 3; }');
+  assert.equal(v.length, 1);
+});
+
+test('the reported line survives comments earlier in the file', () => {
+  const content = '/* a\n   multi-line\n   comment */\n.kx-chip { padding: 0; }';
+  const v = cur(content);
+  assert.equal(v.length, 1);
+  assert.equal(v[0].line, 4);
+});
+
+test('the shipped reference stylesheet declares a cursor for every control it styles', () => {
+  const css = readFileSync(
+    fileURLToPath(new URL('../skill/templates/interactive/components.css', import.meta.url)), 'utf8',
+  );
+  assert.deepEqual(cur(css, 'components.css'), []);
 });

@@ -56,6 +56,8 @@ type scale, spacing, radii, shadows, and motion timing. Write them into `design/
 
 Contrast is verified, not asserted: `design/contrast.mjs` reads tokens.json and asserts every documented pairing (text ≥4.5:1; controls, focus rings and state markers ≥3:1 per SC 1.4.11) in BOTH themes. Update its PAIRS as you write tokens; a component added later adds its pairs.
 
+It also asserts, by CROSS PRODUCT rather than declaration, that every state wash (`action.hover-wash`, `action.pressed-wash`) is visible on every surface it can cover, and that press reads stronger than hover. **Washes must be `rgba(...)` in every theme** — an opaque wash is invisible on whichever surface shares its value, and since washes and quiet surfaces both come off the low end of the same neutral ramp, that collision is the default outcome. This template shipped with `hover-wash === surface.subtle` and `pressed-wash === surface.sunken`, exactly, until a real project hit it.
+
 Typeface decisions: compare candidates in context with a rendered mockup (embed woff2 as data URIs — never a CDN link, it fails silently offline). Same-genre faces converge at UI size, so compare with large stacked specimens and a disambiguation set (`1lI| 0O a g`), not side-by-side UI columns. Self-host chosen faces via `design/fonts/fonts.css` + woff2 files in `design/fonts/`.
 
 **Checkpoint:** render; review swatches, ramps, and scales in both themes.
@@ -67,7 +69,18 @@ selection states) gets a rendered options mockup. Then build `design/components/
 
 Examples are INTERACTIVE, not pictures of states: build them on the reference implementation in `design/interactive/components.css` (+ minimal `components.js`), which render.mjs inlines into the styleguide. Native elements first — `details` for disclosure, radios for chips/segments/tiles, real checkboxes and range inputs; JS only for what HTML cannot do. This stylesheet is written so the real app can adopt it wholesale — that is the anti-drift endgame.
 
-**Checkpoint:** render; operate every control; review each variant×state matrix.
+Native elements come with UA behavior you must OVERRIDE, not inherit, and the cursor is
+the one that hides: `<button>`, `<select>`, `<input type="range">` and `<summary>` all
+inherit `cursor: default`, so a styled control reads as not clickable until the
+stylesheet says otherwise — and nothing looks missing in review, the pointer just never
+changes. Declare a cursor for every control family (`pointer` when clicked, `default`
+when disabled, `grab`/`grabbing` for a drag handle; a text field keeps its caret).
+`audit.mjs` enforces it per family, because this template shipped for months with Select
+as the one control that never said it was clickable and it was a USER who found it.
+
+**Checkpoint:** render; operate every control; review each variant×state matrix. HOVER
+each control with a real pointer — the cursor, the wash and the focus ring are three
+separate things and only one of them shows up in a screenshot.
 
 ## Phase 3 — Patterns & layout
 Fill `design/patterns/*.md` — page templates, navigation, forms, and empty/loading/error states. **Checkpoint:** render; review.
@@ -78,6 +91,9 @@ governance ownership. Then fill `design/foundations/voice.md`, `design/foundatio
 
 ## Phase 5 — Lock & wire up
 1. Run `cd design && node audit.mjs` to confirm a clean baseline (fix any hits).
+   Optional: set `"spelling": "american"` in `audit.config.json` to also flag British
+   spellings ("colour", "grey", "centre", …) in the audited files — `aria-labelledby`
+   is exempt.
 2. Install the auto-regen hook: merge `design/settings.hook.json` into the project's `.claude/settings.json`.
 3. Append `design/CLAUDE.section.md` to the project's `CLAUDE.md`.
 4. Add `node design/render.mjs --check && node design/contrast.mjs && node design/contrast.mjs --dark && node design/audit.mjs` to CI or a pre-commit hook.

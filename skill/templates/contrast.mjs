@@ -9,6 +9,10 @@
 //
 // Pairs are declared, not discovered: each one names a real place two tokens
 // meet in the product. Adding a component means adding its pairs here.
+//
+// STATE LAYERS are the one thing checked by DISCOVERY instead (see the block after
+// PAIRS): every wash is measured against every surface it can cover, because the
+// failure this catches is precisely a pairing nobody thought to declare.
 
 import { readFileSync } from 'node:fs';
 import { join, dirname, basename } from 'node:path';
@@ -130,6 +134,32 @@ const PAIRS = [
   ['Sheet vs stage (Principle 4)', 'color.surface.paper',   'color.surface.stage', 'exempt'],
 ];
 
+// ---- state layers must be VISIBLE on every surface they can cover ----------
+// A wash IS the whole signal for hover and press — no border moves, no label changes —
+// so it has to differ from its backdrop everywhere it can land. An OPAQUE wash cannot:
+// it is invisible on whichever surface happens to share its value. That is not a
+// hypothetical. This template shipped `hover-wash` as stone.2, which is exactly
+// `surface.subtle`, and `pressed-wash` as stone.3, which is exactly `surface.sunken`,
+// so in light mode hovering anything inside a grouped/inset body did NOTHING, and a
+// press on a sunken track did nothing either. Contrast pairs never caught it: they ask
+// "is the text legible", not "is this state distinguishable from no state".
+//
+// Cross product, not a hand-listed pair set — the whole failure was a combination
+// nobody thought to list. A surface a project does not define is skipped.
+const WASHES = [
+  ['Hover wash', 'color.action.hover-wash'],
+  ['Pressed wash', 'color.action.pressed-wash'],
+];
+const WASH_OVER = [
+  'color.surface.page',
+  'color.surface.card',
+  'color.surface.subtle',
+  'color.surface.sunken',
+];
+// 1.00 is the bug (identical). 1.03 is about the faintest step that still reads as a
+// deliberate state on a large fill; anything under it is a wash nobody can see.
+const WASH_MIN = 1.03;
+
 const MIN = { text: 4.5, large: 3, nontext: 3, exempt: 0 };
 
 let failed = 0;
@@ -153,8 +183,56 @@ for (const x of rows) {
   );
 }
 
+// ---- run the state-layer cross product -------------------------------------
+const washRows = [];
+for (const [label, path] of WASHES) {
+  if (!tok[path]) continue;                       // a project need not define both
+  for (const surf of WASH_OVER) {
+    if (!tok[surf]) continue;
+    const back = opaque(surf);
+    const front = flatten(get(path), back);
+    const r = ratio(front, back);
+    const ok = r + 1e-9 >= WASH_MIN;
+    if (!ok) failed += 1;
+    washRows.push({ label: `${label} on ${surf.split('.').pop()}`, front, back, r, ok });
+  }
+}
+// A press that reads no stronger than a hover is a state the user cannot confirm.
+const strongest = (path, surf) => {
+  const back = opaque(surf);
+  return ratio(flatten(get(path), back), back);
+};
+const ORDER_ON = tok['color.surface.card'] ? 'color.surface.card' : 'color.surface.page';
+if (tok['color.action.hover-wash'] && tok['color.action.pressed-wash'] && tok[ORDER_ON]) {
+  const h = strongest('color.action.hover-wash', ORDER_ON);
+  const pr = strongest('color.action.pressed-wash', ORDER_ON);
+  const ok = pr > h + 1e-9;
+  if (!ok) failed += 1;
+  washRows.push({
+    label: 'Pressed reads stronger than hover',
+    front: pr.toFixed(3), back: h.toFixed(3), r: pr, ok, order: true,
+  });
+}
+
+if (washRows.length) {
+  const ww = Math.max(...washRows.map((x) => x.label.length));
+  console.log(`  State layers — a wash must be visible on every surface it covers\n`);
+  for (const x of washRows) {
+    const detail = x.order
+      ? `pressed ${x.front} vs hover ${x.back}`.padEnd(34)
+      : `${x.front} on ${x.back}`.padEnd(34);
+    console.log(
+      `  ${x.ok ? '✓' : '✗'} ${x.label.padEnd(ww)}  ${detail}  ${x.order ? '' : x.r.toFixed(3).padStart(6) + ':1  '}(${x.order ? 'stronger' : `need ${WASH_MIN}`})`,
+    );
+  }
+  console.log('');
+}
+
 if (failed) {
-  console.error(`\n  ${failed} pair(s) below the required ratio.\n`);
+  console.error(`\n  ${failed} check(s) failed.\n`);
   exit(1);
 }
-console.log(`\n  All ${rows.filter((x) => x.kind !== 'exempt').length} enforced pairs pass.\n`);
+console.log(
+  `  All ${rows.filter((x) => x.kind !== 'exempt').length} enforced pairs and ` +
+    `${washRows.length} state-layer checks pass.\n`,
+);

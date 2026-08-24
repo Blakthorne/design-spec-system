@@ -14,7 +14,7 @@ function esc(s) {
 
 // ---- token gallery ----------------------------------------------------------
 // Grouped and visual, the way mature systems document tokens (Carbon/Polaris/Material):
-// colour ramps as strips, semantic colours as swatch cards with their dark value,
+// color ramps as strips, semantic colors as swatch cards with their dark value,
 // type as live specimens, spacing as proportional bars, radius/shadow/border as shapes.
 function tGroup(tokens, top) { return tokens.filter((t) => t.path[0] === top); }
 
@@ -39,8 +39,8 @@ function colorGallery(tokens) {
         <div class="tg-val">${esc(t.value)}${t.dark ? ` <span class="tg-dark">· dark ${esc(t.dark)}</span>` : ''}</div>
       </div>`).join('')}
     </div>`).join('');
-  return `<h3 class="tg-sect">Colour — primitives <em class="warn">(not for direct use)</em></h3>${rampsHtml}
-          <h3 class="tg-sect">Colour — semantic roles</h3>${semHtml}`;
+  return `<h3 class="tg-sect">Color — primitives <em class="warn">(not for direct use)</em></h3>${rampsHtml}
+          <h3 class="tg-sect">Color — semantic roles</h3>${semHtml}`;
 }
 
 function typeGallery(tokens) {
@@ -171,7 +171,7 @@ ${input.componentCss || ''}
 
 /* =========================================================================
    The styleguide's own chrome — built FROM the system it documents: token
-   colours, the two faces, the spacing scale, the zone-heading grammar. The
+   colors, the two faces, the spacing scale, the zone-heading grammar. The
    guide is the first product of the design system.
    ========================================================================= */
 * { box-sizing: border-box; }
