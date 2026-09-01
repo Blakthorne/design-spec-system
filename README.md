@@ -7,6 +7,9 @@ project and compiles it into a human-viewable visual style guide, with anti-drif
 ```bash
 ./install.sh   # copies skill/ -> ~/.claude/skills/design-spec/
 ```
+Any existing install is moved to `~/.claude/.design-spec-backups/design-spec-<timestamp>/`
+(the 3 most recent are kept). Backups stay outside `~/.claude/skills/` so they are never
+loaded as a second, duplicate skill.
 
 ## Use
 In a new project, invoke the `design-spec` skill and follow its phases. It scaffolds
