@@ -118,6 +118,52 @@ test('aria-labelledby is exempt from the spelling check', () => {
   assert.equal(v.length, 0);
 });
 
+test('-is- verb families are in the British list', () => {
+  const v = auditCode({
+    tokensRoot,
+    files: [{ path: 'a.md', content: 'utilisation is high\nauthorised lines only\napologise never\nrecognised at once' }],
+    spelling: 'american',
+  });
+  assert.equal(v.length, 4);
+  assert.ok(v.every((x) => x.kind === 'british-spelling'));
+});
+
+// ---- markdown scoping + em-dash-in-interface-copy -------------------------------
+// In a spec .md file only the ```html render blocks are code AND interface copy;
+// prose may discuss hex ramps and use em dashes freely.
+const md = (body) => [{ path: 'spec.md', content: body }];
+
+test('em dash inside a render block is flagged as interface copy', () => {
+  const v = auditCode({ tokensRoot, files: md('prose\n```html render\n<span>Approve — now</span>\n```\n') });
+  assert.equal(v.length, 1);
+  assert.equal(v[0].kind, 'em-dash-in-interface-copy');
+  assert.equal(v[0].line, 3);
+});
+
+test('em dash in markdown prose is not flagged', () => {
+  const v = auditCode({ tokensRoot, files: md('This rule — hard-won — stays.\n') });
+  assert.equal(v.length, 0);
+});
+
+test('em dash in a stylesheet comment is not flagged', () => {
+  const v = auditCode({ tokensRoot, files: [{ path: 'a.css', content: '/* reserved — no reflow */\n.x { color: var(--color-action-primary); }' }] });
+  assert.equal(v.length, 0);
+});
+
+test('raw hex in markdown prose is not flagged; in a render block it is', () => {
+  const prose = auditCode({ tokensRoot, files: md('The ramp peaks at #FF0000 in prose.\n') });
+  assert.equal(prose.length, 0);
+  const example = auditCode({ tokensRoot, files: md('```html render\n<div style="color:#FF0000">x</div>\n```\n') });
+  assert.equal(example.length, 1);
+  assert.equal(example[0].kind, 'untokenized-color');
+});
+
+test('primitive token use inside a render block is still flagged', () => {
+  const v = auditCode({ tokensRoot, files: md('```html render\n<div style="color:var(--color-red-6)">x</div>\n```\n') });
+  assert.equal(v.length, 1);
+  assert.equal(v[0].kind, 'primitive-token-direct-use');
+});
+
 // ---- control-cursor-undeclared -------------------------------------------------
 // The lapse this catches: a styled control that never says it is clickable. Invisible
 // in review (nothing is missing, the pointer just never changes), so it needs a lint.
