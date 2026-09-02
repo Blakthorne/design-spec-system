@@ -93,7 +93,11 @@ governance ownership. Then fill `design/foundations/voice.md`, `design/foundatio
 1. Run `cd design && node audit.mjs` to confirm a clean baseline (fix any hits).
    Optional: set `"spelling": "american"` in `audit.config.json` to also flag British
    spellings ("colour", "grey", "centre", …) in the audited files — `aria-labelledby`
-   is exempt.
+   is exempt. The audit also flags em dashes inside ```` ```html render ```` examples
+   (`em-dash-in-interface-copy`): in user-facing strings they read as machine-written,
+   and the fix is a rewritten sentence, never a swapped-in colon or semicolon. In `.md`
+   files only the render blocks are audited as code, so spec prose can discuss hex
+   ramps and use em dashes freely.
 2. Install the auto-regen hook: merge `design/settings.hook.json` into the project's `.claude/settings.json`.
 3. Append `design/CLAUDE.section.md` to the project's `CLAUDE.md`.
 4. Add `node design/render.mjs --check && node design/contrast.mjs && node design/contrast.mjs --dark && node design/audit.mjs` to CI or a pre-commit hook.
@@ -112,4 +116,5 @@ Tell the human the spec is now the project's source of truth: edit `design/` sou
 - **Prose is lean** — rules, tables, one-line rationales. The spec is a reference, not an essay; cut narrative on every pass.
 - **No ASCII box diagrams** — box-drawing glyphs fall back to a different-width font and misalign. Use prose or SVG.
 - **Wide styling states over hand-tuned offsets** — set `box-sizing: border-box` in the reference CSS (host pages may lack a reset) and centre with layout, not magic `top` values.
+- **Interface copy is not spec prose.** An em dash in a banner, hint or validation message reads as machine-written to real users; `audit.mjs` flags them in rendered examples. Recast the sentence — usually as two sentences — never a mechanical swap to a colon or semicolon. Set the spelling convention in Phase 4 and let the audit hold it.
 - **The user's eye beats your passing check.** When they say it looks wrong, measure the rendered pixels before defending the code.

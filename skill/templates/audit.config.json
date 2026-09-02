@@ -1,5 +1,16 @@
 {
   "tokens": "design/tokens.json",
-  "include": ["src", "app", "styles"],
-  "extensions": [".css", ".scss", ".ts", ".tsx", ".js", ".jsx", ".vue", ".svelte"]
+  "include": [
+    "design/interactive",
+    "design/fonts",
+    "design/components",
+    "design/patterns",
+    "design/foundations",
+    "design/principles.md",
+    "design/governance.md",
+    "src",
+    "app",
+    "styles"
+  ],
+  "extensions": [".css", ".scss", ".ts", ".tsx", ".js", ".jsx", ".vue", ".svelte", ".md"]
 }

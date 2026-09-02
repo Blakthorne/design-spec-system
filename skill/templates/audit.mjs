@@ -45,8 +45,11 @@ function hasUntokenizedColor(rawLine) {
 // says `"spelling": "american"` (see foundations/voice). `aria-labelledby` is the ARIA
 // standard's own spelling and is exempted before matching.
 const BRITISH = [
-  /colour/i, /\bgrey/i, /\bcentre/i, /behaviour/i, /labell/i,
+  /colour/i, /\bgrey/i, /\bcentre/i, /centring/i, /behaviour/i, /labell/i,
   /\borganis(?:e|ed|ing|ation)/i, /\bcustomis(?:e|ed|ing)/i, /licence/i, /favourite/i,
+  // -is- verb families a design spec actually writes: each of these shipped in a real
+  // project's Phase 1–4 drafts and had to be swept out by hand after the list missed it.
+  /\butilis/i, /\bauthoris/i, /\bapologis/i, /\brecognis/i,
 ];
 function hasBritishSpelling(rawLine) {
   const line = rawLine.replace(/aria-labelledby/gi, '');
@@ -150,24 +153,52 @@ export function auditCursors(files) {
   return violations;
 }
 
+// In a spec .md file, only the ```html render blocks are CODE — and they are also the
+// only lines a user will ever read as interface copy, because render.mjs inlines them
+// into the styleguide as live examples. Prose may discuss a hex ramp or use an em dash
+// freely; an example may not. Returns a Set of 0-based line indices.
+function renderBlockLines(content) {
+  const lines = content.split('\n');
+  const inBlock = new Set();
+  let inb = false;
+  lines.forEach((line, idx) => {
+    if (/^```html render\b/.test(line)) { inb = true; return; }
+    if (inb && /^```\s*$/.test(line)) { inb = false; return; }
+    if (inb) inBlock.add(idx);
+  });
+  return inBlock;
+}
+
 export function auditCode({ tokensRoot, files, spelling }) {
   const list = tokenList(tokensRoot);
   const primitiveVars = new Set(list.filter((t) => t.tier === 'primitive').map((t) => t.cssVar));
   const violations = [];
 
   for (const { path, content } of files) {
+    const isMd = /\.md$/.test(path);
+    const exampleLines = isMd ? renderBlockLines(content) : null;
     const lines = content.split('\n');
     lines.forEach((line, idx) => {
       const lineNo = idx + 1;
-      const compact = line.replace(/\s+/g, ''); // catch `var(  --x  )` with padding
-      for (const pv of primitiveVars) {
-        if (compact.includes(`var(${pv})`)) {
-          violations.push({ file: path, line: lineNo, kind: 'primitive-token-direct-use', snippet: line.trim() });
-          return; // one violation per line is enough
+      const isCode = !isMd || exampleLines.has(idx);
+      if (isCode) {
+        const compact = line.replace(/\s+/g, ''); // catch `var(  --x  )` with padding
+        for (const pv of primitiveVars) {
+          if (compact.includes(`var(${pv})`)) {
+            violations.push({ file: path, line: lineNo, kind: 'primitive-token-direct-use', snippet: line.trim() });
+            return; // one violation per line is enough
+          }
+        }
+        if (hasUntokenizedColor(line)) {
+          violations.push({ file: path, line: lineNo, kind: 'untokenized-color', snippet: line.trim() });
         }
       }
-      if (hasUntokenizedColor(line)) {
-        violations.push({ file: path, line: lineNo, kind: 'untokenized-color', snippet: line.trim() });
+      // Interface copy carries no em dashes (see foundations/voice): in user-facing
+      // strings they read as machine-written. Enforced only where users read it — the
+      // rendered examples — never in prose or code comments. The fix is a rewritten
+      // sentence, not a swapped-in colon or semicolon.
+      if (isMd && exampleLines.has(idx) && line.includes('—')) {
+        violations.push({ file: path, line: lineNo, kind: 'em-dash-in-interface-copy', snippet: line.trim() });
       }
       if (spelling === 'american' && hasBritishSpelling(line)) {
         violations.push({ file: path, line: lineNo, kind: 'british-spelling', snippet: line.trim() });
